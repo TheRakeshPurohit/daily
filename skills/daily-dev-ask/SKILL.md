@@ -1,13 +1,13 @@
 ---
 name: daily-dev-ask
-description: Answer technical questions using daily.dev's knowledge base. Searches articles from the developer community and synthesizes answers with source links.
+description: Your agent's WebSearch for development. Search community-vetted developer articles ranked by upvotes — like having a senior dev's reading list. Answers are grounded in real sources, never hallucinated.
 argument-hint: "<your technical question>"
 allowed-tools: Bash
 ---
 
 # daily.dev Ask
 
-Answer technical questions by searching daily.dev's article knowledge base. Fetches relevant articles and synthesizes an answer grounded in community-vetted content.
+A developer-focused search tool — like WebSearch, but backed by a senior dev's reading list instead of the open web. Searches community-vetted developer articles ranked by upvotes and synthesizes grounded answers with source links.
 
 ## User question
 
