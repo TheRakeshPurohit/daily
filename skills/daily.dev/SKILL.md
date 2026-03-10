@@ -69,10 +69,31 @@ secret-tool lookup service daily-dev-api username "$USER"
 export DAILY_DEV_TOKEN=$(secret-tool lookup service daily-dev-api username "$USER" 2>/dev/null)
 ```
 
+## Resolving the API token
+
+Check if `DAILY_DEV_TOKEN` environment variable is available. If not set, try to retrieve it from the OS secure storage before asking the user for help:
+
+**macOS:**
+```bash
+export DAILY_DEV_TOKEN=$(security find-generic-password -a "$USER" -s "daily-dev-api" -w 2>/dev/null)
+```
+
+**Linux:**
+```bash
+export DAILY_DEV_TOKEN=$(secret-tool lookup service daily-dev-api username "$USER" 2>/dev/null)
+```
+
+**Windows (PowerShell):**
+```powershell
+$cred = Import-Clixml "$env:USERPROFILE\.daily-dev-credential.xml" 2>$null; $env:DAILY_DEV_TOKEN = $cred.GetNetworkCredential().Password
+```
+
+If the token is still empty after trying secure storage, direct the user to the Setup section above.
+
 ## Authentication
 
 ```
-Authorization: Bearer dda_your_token_here
+Authorization: Bearer $DAILY_DEV_TOKEN
 ```
 
 ## Base URL
