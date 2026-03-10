@@ -80,21 +80,19 @@ export DAILY_DEV_TOKEN=$(secret-tool lookup service daily-dev-api username "$USE
 
 Check if `DAILY_DEV_TOKEN` environment variable is available. If not found, direct the user to the Setup section above.
 
-### 2. Search for articles
+### 2. Search iteratively — treat daily.dev like a search engine
 
-Make **two parallel requests** using Bash with curl to get the best coverage — one keyword-based and one semantic:
+Use the two endpoints below as many times as needed to explore the user's question. There is no hard limit on the number of queries — search like you would with web search.
 
-**Keyword search** — extract 2-3 key technical terms from the question and search:
+**Keyword search endpoint:**
 ```bash
-curl -s -H "Authorization: Bearer $DAILY_DEV_TOKEN" "https://api.daily.dev/public/v1/recommend/keyword?q={extracted+keywords}&limit=5"
+curl -s -H "Authorization: Bearer $DAILY_DEV_TOKEN" "https://api.daily.dev/public/v1/recommend/keyword?q={keywords}&limit=20"
 ```
 
-**Semantic search** — send the full natural language question:
+**Semantic search endpoint:**
 ```bash
-curl -s -H "Authorization: Bearer $DAILY_DEV_TOKEN" "https://api.daily.dev/public/v1/recommend/semantic?q={full+question}&limit=5"
+curl -s -H "Authorization: Bearer $DAILY_DEV_TOKEN" "https://api.daily.dev/public/v1/recommend/semantic?q={query}&limit=20"
 ```
-
-Run both curl commands in parallel using two Bash tool calls in a single message.
 
 Both return:
 ```json
@@ -115,17 +113,35 @@ Both return:
 }
 ```
 
+#### Search strategy
+
+1. **Initial searches** — Start with a keyword search (core technical terms) and a semantic search (full question). You can run these in parallel.
+
+2. **Analyze and identify gaps** — Review the results:
+   - Did I find enough to fully answer the question?
+   - Are there sub-topics or related concepts I haven't explored?
+   - Did article titles/tags hint at related terms worth searching?
+
+3. **Follow-up searches** — For any gaps or interesting leads:
+   - Search for specific tools, libraries, or frameworks mentioned in results
+   - Try synonyms or alternative terminology
+   - Search for sub-topics the user might care about
+
+4. **Stop when done** — Stop searching when:
+   - You have enough articles to give a good answer, OR
+   - Follow-up searches return no new results
+
 ### 3. Deduplicate results
 
-Merge results from both endpoints, removing duplicates by `id`. Keep all unique articles.
+Merge results from all search rounds, removing duplicates by `id`. Keep all unique articles.
 
 ### 4. Synthesize the answer
 
-Using the merged article data, compose a response following this structure:
+Using all collected articles, compose a response:
 
 ---
 
-**Answer the question directly** in 2-4 paragraphs, grounding your response in the article content. Reference specific articles when making claims. Use the `summary`, `title`, and `tags` to understand each article's angle.
+**Answer the question directly**, grounding your response in the article content. Reference specific articles when making claims. Use the `summary`, `title`, and `tags` to understand each article's angle.
 
 **Use engagement signals to weight credibility:**
 - Higher `numUpvotes` = more community validation
@@ -146,10 +162,10 @@ Using the merged article data, compose a response following this structure:
 
 ### 5. Handle edge cases
 
-- **No results from both endpoints**: Tell the user you couldn't find relevant articles on daily.dev for this topic. Suggest they try rephrasing or searching directly at https://app.daily.dev
-- **Only one endpoint returns results**: Use whatever you got — partial results are fine
+- **No results**: State that daily.dev's knowledge base doesn't have relevant articles on this topic yet.
+- **Only some searches return results**: Use whatever you got — partial results are fine.
 - **API errors (401)**: Token is invalid or expired — guide user to regenerate at https://app.daily.dev/settings/api
-- **API errors (429)**: Rate limited — tell the user to wait a moment and try again
+- **API errors (429)**: Rate limited — wait briefly and retry automatically.
 
 ## Important
 
